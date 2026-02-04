@@ -199,7 +199,7 @@ def info():
     """API endpoint with system information"""
     return jsonify({
         'application': 'DevOps Infrastructure Project',
-        'version': '1.0',
+        'version': '1.1',
         'hostname': socket.gethostname(),
         'timestamp': datetime.now().isoformat(),
         'environment': os.getenv('ENVIRONMENT', 'production'),
