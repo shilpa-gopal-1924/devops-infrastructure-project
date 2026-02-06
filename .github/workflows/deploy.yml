@@ -1,38 +1,27 @@
-
-Let's break down what each part does:
-
-#### **Trigger Section:**
-
 on:
   push:
     branches: [ main ]
 
-#**Meaning:** Run this pipeline whenever code is pushed to the `main` branch
 
 
 
-#### **Environment Variables:**
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/devops-web-app
   EC2_HOST: ${{ secrets.EC2_HOST }}
-#**Meaning:** Define variables used throughout the pipeline (using secrets for security)
 
 
 
-#### **Job Steps:**
 
 Step 1 - Checkout:
 - name: Checkout code
   uses: actions/checkout@v3
 
-#**Meaning:** Download your code from GitHub repository
 
 
 
 Step 2 - Setup Docker Buildx:
 - name: Set up Docker Buildx
   uses: docker/setup-buildx-action@v2
-#**Meaning:** Prepare Docker for faster, better builds
 
 
 
@@ -44,7 +33,6 @@ Step 3 - Docker Login:
     username: ${{ secrets.DOCKER_USERNAME }}
     password: ${{ secrets.DOCKER_PASSWORD }}
 
-#**Meaning:** Login to Docker Hub using credentials stored in GitHub Secrets
 
 
 
@@ -58,11 +46,6 @@ Step 4 - Build and Push:
       ${{ env.DOCKER_IMAGE }}:latest
       ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
-#**Meaning:** 
-#- Build Docker image from `./app` directory
-#- Push to Docker Hub with two tags:
- # - `latest` - Always points to newest version
-  #- `sha` - Unique identifier for this specific version (e.g., `abc123def456`)
 
 
 
@@ -79,12 +62,6 @@ Step 5 - Deploy to EC2:
       docker rm web-app || true
       docker run -d -p 80:5000 --name web-app --restart unless-stopped ${{ env.DOCKER_IMAGE }}:latest
 
-#**Meaning:**
-#- SSH into your EC2 instance
-#- Pull the new Docker image
-#- Stop old container (if running)
-#- Remove old container
-#- Start new container with updated image
 
 Step 6 - Verify:
 - name: Verify deployment
@@ -92,10 +69,6 @@ Step 6 - Verify:
     sleep 10
     curl -f http://${{ secrets.EC2_HOST }}/health || exit 1
 
-#**Meaning:**
-#- Wait 10 seconds for container to start
-#- Test the `/health` endpoint
-#- If health check fails, mark pipeline as failed
 
 
 
