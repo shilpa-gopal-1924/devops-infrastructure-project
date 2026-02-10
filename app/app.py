@@ -146,7 +146,7 @@ HTML_TEMPLATE = '''
             </div>
             <div class="info-card">
                 <div class="info-label">Version</div>
-                <div class="info-value">v1.0</div>
+                <div class="info-value">v1.2</div>
             </div>
         </div>
         
@@ -191,7 +191,7 @@ def health():
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'hostname': socket.gethostname(),
-        'version': '1.0'
+        'version': '1.2'
     }), 200
 
 @app.route('/api/info')
@@ -199,7 +199,7 @@ def info():
     """API endpoint with system information"""
     return jsonify({
         'application': 'DevOps Infrastructure Project',
-        'version': '1.1',
+        'version': '1.2',
         'hostname': socket.gethostname(),
         'timestamp': datetime.now().isoformat(),
         'environment': os.getenv('ENVIRONMENT', 'production'),

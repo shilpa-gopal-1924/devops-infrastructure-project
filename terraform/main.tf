@@ -157,10 +157,6 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-resource "aws_key_pair" "deploy" {
-  key_name   = "my-deploy-key"
-  public_key = file("~/.ssh/id_rsa_aws.pub")
-}
 
 
 # ============================================
@@ -175,7 +171,7 @@ resource "aws_instance" "web_server" {
 
 
   # Add this line:
-  key_name               = aws_key_pair.deploy.key_name  # ← THIS LINE
+  key_name               = "my-deploy-key"  # ← THIS LINE
  
 
   # User data script to install Docker and run the application
