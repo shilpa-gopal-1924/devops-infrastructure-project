@@ -1,6 +1,6 @@
 # DevOps Web Application
 
-A containerized Flask web application demonstrating automated infrastructure provisioning.
+A containerized Flask web application demonstrating automated infrastructure provisioning using AWS.
 
 ## Features
 
