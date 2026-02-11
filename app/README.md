@@ -15,7 +15,7 @@ A containerized Flask web application demonstrating automated infrastructure pro
 - **Backend:** Python 3.9 + Flask 3.0
 - **Containerization:** Docker
 - **Deployment:** AWS EC2 (via Terraform)
-- **CI/CD:** GitHub Actions (coming soon)
+- **CI/CD:** GitHub Actions 
 - **Monitoring:** Prometheus + Grafana (coming soon)
 
 ## Running Locally
