@@ -1,11 +1,60 @@
 # app.py - Simple Flask Web Application
 
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 import os
 import socket
 from datetime import datetime
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, REGISTRY
+from prometheus_client import CollectorRegistry, multiprocess, CONTENT_TYPE_LATEST
+import time
 
 app = Flask(__name__)
+
+
+# Prometheus metrics
+REQUEST_COUNT = Counter(
+    'app_request_count',
+    'Application Request Count',
+    ['method', 'endpoint', 'http_status']
+)
+
+REQUEST_LATENCY = Histogram(
+    'app_request_latency_seconds',
+    'Application Request Latency',
+    ['method', 'endpoint']
+)
+
+ACTIVE_REQUESTS = Gauge(
+    'app_active_requests',
+    'Number of active requests'
+)
+
+@app.before_request
+def before_request():
+    """Track request start time"""
+    request.start_time = time.time()
+    ACTIVE_REQUESTS.inc()
+
+@app.after_request
+def after_request(response):
+    """Record metrics after each request"""
+    request_latency = time.time() - request.start_time
+    
+    REQUEST_COUNT.labels(
+        method=request.method,
+        endpoint=request.endpoint or 'unknown',
+        http_status=response.status_code
+    ).inc()
+    
+    REQUEST_LATENCY.labels(
+        method=request.method,
+        endpoint=request.endpoint or 'unknown'
+    ).observe(request_latency)
+    
+    ACTIVE_REQUESTS.dec()
+    
+    return response
+
 
 # HTML template for the home page
 HTML_TEMPLATE = '''
@@ -226,7 +275,7 @@ app_requests_total 1
 # TYPE app_status gauge
 app_status 1
 """
-    return metrics_data, 200, {'Content-Type': 'text/plain'}
+    return generate_latest(REGISTRY), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     # Get port from environment variable or use default

@@ -143,6 +143,24 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["18.206.107.24/29"]
   }
 
+  # NEW: Grafana access
+  ingress {
+    description = "Grafana from my IP"
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
+
+  # NEW: Prometheus access (optional, for debugging)
+  ingress {
+    description = "Prometheus from my IP"
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
+
   # Allow all outbound traffic
   egress {
     description = "All outbound traffic"
@@ -177,32 +195,77 @@ resource "aws_instance" "web_server" {
   # User data script to install Docker and run the application
   user_data = <<-EOF
               #!/bin/bash
+              exec > /var/log/user-data.log 2>&1
+              echo "Starting user_data script at $(date)"
+
               # Update system
+              echo "Updating system..."
               yum update -y
-              
+
               # Install Docker
-              amazon-linux-extras install docker -y
+              echo "Installing Docker..."
+              yum install -y docker
               systemctl start docker
               systemctl enable docker
-              
+
               # Add ec2-user to docker group
               usermod -a -G docker ec2-user
-              
-              # Pull and run Docker container
+
+              # Pull and run application
+              echo "Pulling application image..."
               docker pull ${var.docker_image}
+              echo "Starting application container..."
               docker run -d -p 80:5000 --name web-app --restart unless-stopped ${var.docker_image}
-              
-              # Create a simple status check script
-              cat > /home/ec2-user/check-app.sh << 'SCRIPT'
-              #!/bin/bash
-              echo "Checking application status..."
-              docker ps
-              echo ""
-              echo "Application logs:"
-              docker logs web-app --tail 20
-              SCRIPT
-              
-              chmod +x /home/ec2-user/check-app.sh
+
+              # Setup Prometheus
+              echo "Setting up Prometheus..."
+              mkdir -p /opt/prometheus
+              cat > /opt/prometheus/prometheus.yml << 'PROM'
+              global:
+                scrape_interval: 15s
+                evaluation_interval: 15s
+
+              scrape_configs:
+                - job_name: 'flask-app'
+                  static_configs:
+                    - targets: ['localhost:80']
+                  metrics_path: '/metrics'
+
+                - job_name: 'prometheus'
+                  static_configs:
+                    - targets: ['localhost:9090']
+
+                - job_name: 'node-exporter'
+                  static_configs:
+                    - targets: ['localhost:9100']
+              PROM
+
+              # Run Prometheus
+              docker run -d \
+                --name prometheus \
+                -p 9090:9090 \
+                -v /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
+                --restart unless-stopped \
+                prom/prometheus:latest
+
+              # Run Node Exporter (system metrics)
+              docker run -d \
+                --name node-exporter \
+                -p 9100:9100 \
+                --restart unless-stopped \
+                prom/node-exporter:latest
+
+              # Run Grafana
+              echo "Setting up Grafana..."
+              docker run -d \
+                --name grafana \
+                -p 3000:3000 \
+                -e "GF_SECURITY_ADMIN_PASSWORD=admin" \
+                -e "GF_USERS_ALLOW_SIGN_UP=false" \
+                --restart unless-stopped \
+                grafana/grafana:latest
+
+              echo "user_data script completed at $(date)"
               EOF
 
   # Root volume configuration
