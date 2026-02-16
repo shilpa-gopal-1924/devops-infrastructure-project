@@ -265,16 +265,7 @@ def info():
 
 @app.route('/metrics')
 def metrics():
-    """Basic metrics endpoint for Prometheus (we'll enhance this later)"""
-    # Simple metrics in Prometheus format
-    metrics_data = f"""# HELP app_requests_total Total number of requests
-# TYPE app_requests_total counter
-app_requests_total 1
-
-# HELP app_status Application status (1 = up, 0 = down)
-# TYPE app_status gauge
-app_status 1
-"""
+    "Prometheus Metrics Endpoint"
     return generate_latest(REGISTRY), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
