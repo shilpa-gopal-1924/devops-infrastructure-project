@@ -1,4 +1,4 @@
-# app.py - Simple Flask Web Application
+# app.py - Simple Flask Web Application Code
 
 from flask import Flask, jsonify, render_template_string, request
 import os
